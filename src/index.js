@@ -38,3 +38,15 @@ dotenv.config({
 
 
 connectDB()
+.then(()=>{
+    app.listen(process.env.PORT || 8000,()=>{
+        console.log(`server is running at port:${process.env.PORT}`);
+    })
+    app.on("Error",(error)=>{
+            console.log("ERROR: ", error)
+            throw error    
+        });
+})
+.catch((ERROR)=>{
+    console.log("MONFODB failed to connect",ERROR);
+})
