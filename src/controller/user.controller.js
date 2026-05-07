@@ -4,6 +4,26 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import {User} from '../model/user.model.js';
 import {uploadData} from '../utils/cloudinary.js';
 
+
+const generateAccessTokenAndRefershToken = async(userId)=>{
+  try {
+    const user = await User.findById(userId)
+    const AccessToken =  await User.generateAccessToken()
+    const RefreshToken = await User.generateRefreshToken()
+
+
+    user.RefreshToken = RefreshToken
+    await UserRefreshToken.save({ validatebeforeSave:false })
+
+
+    return { AccessToken, RefreshToken }
+
+  } catch (error) {
+    throw new ApiError(500,"internal server problem")
+  }
+}
+
+// ! Register user
 const registerUser = asyncHandler(async (req, res) =>
     {
     //^ get user details from frontend
@@ -75,4 +95,57 @@ const registerUser = asyncHandler(async (req, res) =>
 
 })
 
-export {registerUser}
+// ! Login user
+const logInUser = asyncHandler(async(req,res)=>{
+  // ^ req body -> data  
+const {email, username, password}= req.body
+
+if(!username || !email){
+  throw new ApiError(400,"username or email is required")
+}
+
+// ^ user or email 
+   const user = await User.findOne({
+    $or:[{email},{password}]
+   })
+
+   // ^ find the user
+   if(!user){
+    throw new ApiError(404,"user not exist")
+   }
+
+// ^ password check 
+  const isPasswordValid = await user.isPasswordCorrect(password);
+
+  if(!isPasswordValid){
+    throw new ApiError(401,"Password invalid")
+   }
+
+// ^ loged in using refreshToken by giving Access Token
+  const {AccessToken, RefreshToken} = await generateAccessTokenAndRefershToken(user._id)
+
+  
+const loggedInUser= await User.findById(user._id).select("-password -refreshToken")
+
+// ^ send cookie 
+ const options={
+    httpOnly:true,
+    secure:true
+ }
+ return res
+ .status(200).cookie("accessToken", AccessToken, options)
+ .cookie("refreshToken", RefreshToken, options)
+ .json(
+     new  ApiResponse(
+      200,
+      {
+        user:loggedInUser,AccessToken,RefreshToken
+      },
+      "user logged in sccessfully"
+     )
+ )
+
+})
+
+
+export {registerUser,logInUser }
