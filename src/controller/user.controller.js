@@ -5,21 +5,22 @@ import {User} from '../model/user.model.js';
 import {uploadData} from '../utils/cloudinary.js';
 
 
-const generateAccessTokenAndRefershToken = async(userId)=>{
+const generateAccessTokenAndRefershToken = async (userId) => {
   try {
     const user = await User.findById(userId)
-    const AccessToken =  await User.generateAccessToken()
-    const RefreshToken = await User.generateRefreshToken()
+    if (!user) {
+      throw new ApiError(404, "User not found")
+    }
 
+    const AccessToken = await user.generateAccessToken()
+    const RefreshToken = await user.generateRefreshToken()
 
-    user.RefreshToken = RefreshToken
-    await UserRefreshToken.save({ validatebeforeSave:false })
-
+    user.refreshToken = RefreshToken
+    await user.save({ validateBeforeSave: false })
 
     return { AccessToken, RefreshToken }
-
   } catch (error) {
-    throw new ApiError(500,"internal server problem")
+    throw new ApiError(500, "internal server problem")
   }
 }
 
@@ -100,7 +101,7 @@ const logInUser = asyncHandler(async(req,res)=>{
   // ^ req body -> data  
 const {email, username, password}= req.body
 
-if(!username || !email){
+if(!(username || email)){
   throw new ApiError(400,"username or email is required")
 }
 
@@ -133,7 +134,8 @@ const loggedInUser= await User.findById(user._id).select("-password -refreshToke
     secure:true
  }
  return res
- .status(200).cookie("accessToken", AccessToken, options)
+ .status(200)
+ .cookie("accessToken", AccessToken, options)
  .cookie("refreshToken", RefreshToken, options)
  .json(
      new  ApiResponse(
@@ -148,29 +150,30 @@ const loggedInUser= await User.findById(user._id).select("-password -refreshToke
 })
 
 // !log out user
-const logOutUser = asyncHandler(async(HTMLTableRowElement,res)=>{
+const logOutUser = asyncHandler(async (req, res) => {
   // ^remove cookies
   await User.findByIdAndUpdate(
-    req.user._id,{
-      $set:{
-        refreshToken:undefined
+    req.user._id,
+    {
+      $set: {
+        refreshToken: undefined
       }
     },
     {
-      new:true
+      new: true
     }
   )
-  const options={
-    httpOnly:true,
-    secure:true
- }
- return res
- .status(200)
- .cookie("accessToken", options)
- .cookie("refreshToken", options)
- .json(
-     new  ApiResponse(200, {} ,"user logged out" )
- )
+  const options = {
+    httpOnly: true,
+    secure: true
+  }
+  return res
+    .status(200)
+    .cookie("accessToken", "", options)
+    .cookie("refreshToken", "", options)
+    .json(
+      new ApiResponse(200, {}, "user logged out")
+    )
 
      
 })
