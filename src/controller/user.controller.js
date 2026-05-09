@@ -147,5 +147,33 @@ const loggedInUser= await User.findById(user._id).select("-password -refreshToke
 
 })
 
+// !log out user
+const logOutUser = asyncHandler(async(HTMLTableRowElement,res)=>{
+  // ^remove cookies
+  await User.findByIdAndUpdate(
+    req.user._id,{
+      $set:{
+        refreshToken:undefined
+      }
+    },
+    {
+      new:true
+    }
+  )
+  const options={
+    httpOnly:true,
+    secure:true
+ }
+ return res
+ .status(200)
+ .cookie("accessToken", options)
+ .cookie("refreshToken", options)
+ .json(
+     new  ApiResponse(200, {} ,"user logged out" )
+ )
 
-export {registerUser,logInUser }
+     
+})
+
+
+export {registerUser,logInUser, logOutUser } 
