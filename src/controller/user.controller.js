@@ -345,7 +345,6 @@ const updatecoverimage = asyncHandler(async(req,res)=>{
 })
  
 export {
-  generateAccessTokenAndRefershToken,
   registerUser,
   logInUser, 
   logOutUser, 
