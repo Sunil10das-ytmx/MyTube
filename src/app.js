@@ -17,12 +17,12 @@ app.use(cookieParser())
 //* routes import
 
 import UserRouter from './route/user.routes.js'
- 
-
+import CommentRouter from './route/comment.routes.js'
 
 
 //  *routes decalaration
-app.use("/api/v1/user",UserRouter)
+app.use('/api/v1/user', UserRouter)
+app.use('/api/v1/comments', CommentRouter)
 
 
 
